@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Santhosh NL→SQL Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Outfit:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #08090c;
+  --surface: #0f1117;
+  --card: #141820;
+  --border: rgba(99,179,237,0.14);
+  --border2: rgba(99,179,237,0.07);
+  --accent: #63b3ed;
+  --accent2: #4299e1;
+  --success: #68d391;
+  --warn: #f6ad55;
+  --danger: #fc8181;
+  --purple: #b794f4;
+  --text: #e2e8f0;
+  --muted: #4a5568;
+  --muted2: #718096;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'Outfit', sans-serif;
+  --glow: 0 0 20px rgba(99,179,237,0.15);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+/* Subtle grid background */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background-image:
+    linear-gradient(rgba(99,179,237,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99,179,237,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+}
+
+.wrap { position: relative; z-index: 1; max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+
+/* ── HEADER ── */
+header {
+  border-bottom: 1px solid var(--border2);
+  background: rgba(8,9,12,0.9);
+  backdrop-filter: blur(12px);
+  position: sticky; top: 0; z-index: 100;
+}
+
+.header-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 56px;
+}
+
+.brand {
+  display: flex; align-items: center; gap: 10px;
+}
+.brand-icon {
+  width: 32px; height: 32px;
+  background: linear-gradient(135deg, #63b3ed 0%, #4299e1 50%, #68d391 100%);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--sans); font-size: 14px; font-weight: 900;
+  color: #08090c; flex-shrink: 0;
+  box-shadow: 0 0 16px rgba(99,179,237,0.3);
+}
+.brand-name {
+  font-size: 17px; font-weight: 700; letter-spacing: -0.3px;
+  background: linear-gradient(135deg, #e2e8f0, #a0aec0);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.brand-tag {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 1px;
+  color: var(--accent); background: rgba(99,179,237,0.08);
+  border: 1px solid rgba(99,179,237,0.2); padding: 2px 7px; border-radius: 3px;
+}
+
+.header-right { display: flex; align-items: center; gap: 12px; }
+.status-pill {
+  display: flex; align-items: center; gap: 5px;
+  font-family: var(--mono); font-size: 10px; color: var(--muted2);
+}
+.status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); box-shadow: 0 0 6px var(--success); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+.nav-link {
+  font-family: var(--mono); font-size: 11px; color: var(--muted2);
+  text-decoration: none; padding: 4px 10px; border-radius: 4px;
+  border: 1px solid transparent; transition: all .15s;
+}
+.nav-link:hover { color: var(--accent); border-color: var(--border); background: rgba(99,179,237,0.05); }
+
+/* ── HERO ── */
+.hero {
+  padding: 52px 0 40px;
+  text-align: center;
+}
+.hero-eyebrow {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 16px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.hero-eyebrow::before, .hero-eyebrow::after {
+  content: ''; width: 32px; height: 1px; background: rgba(99,179,237,0.3);
+}
+.hero-title {
+  font-size: clamp(32px, 5vw, 52px); font-weight: 900;
+  letter-spacing: -1.5px; line-height: 1.1; margin-bottom: 16px;
+}
+.hero-title .hl { color: var(--accent); }
+.hero-title .hl2 { color: var(--success); }
+.hero-sub {
+  font-size: 16px; color: var(--muted2); max-width: 600px; margin: 0 auto 32px;
+  font-weight: 300;
+}
+
+/* Pipeline badges */
+.pipeline-badges {
+  display: flex; align-items: center; justify-content: center;
+  flex-wrap: wrap; gap: 4px; margin-bottom: 40px;
+}
+.stage-badge {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.5px;
+  padding: 4px 10px; border-radius: 3px;
+  background: var(--card); border: 1px solid var(--border2);
+  color: var(--muted2); display: flex; align-items: center; gap: 5px;
+  transition: all .2s;
+}
+.stage-badge.active { color: var(--accent); border-color: var(--border); background: rgba(99,179,237,0.06); }
+.stage-badge.pass { color: var(--success); border-color: rgba(104,211,145,0.25); background: rgba(104,211,145,0.06); }
+.stage-badge.fail { color: var(--danger); border-color: rgba(252,129,129,0.25); background: rgba(252,129,129,0.06); }
+.stage-num {
+  width: 14px; height: 14px; border-radius: 50%;
+  background: rgba(255,255,255,0.06); font-size: 8px;
+  display: flex; align-items: center; justify-content: center;
+}
+.stage-arrow { color: var(--muted); font-size: 10px; }
+
+/* ── QUERY BOX ── */
+.query-section { margin-bottom: 32px; }
+
+.query-box {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: var(--glow);
+  transition: box-shadow .2s;
+}
+.query-box:focus-within {
+  box-shadow: 0 0 32px rgba(99,179,237,0.18), 0 0 0 1px rgba(99,179,237,0.3);
+}
+
+.query-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px; border-bottom: 1px solid var(--border2);
+  background: rgba(255,255,255,0.01);
+}
+.query-label {
+  font-family: var(--mono); font-size: 10px; color: var(--muted2);
+  display: flex; align-items: center; gap: 6px; letter-spacing: 0.5px;
+}
+.query-label svg { opacity: .5; }
+.char-count { font-family: var(--mono); font-size: 10px; color: var(--muted); }
+
+textarea#queryInput {
+  width: 100%; min-height: 88px; max-height: 200px;
+  background: none; border: none; outline: none; resize: none;
+  font-family: var(--sans); font-size: 15px; color: var(--text);
+  padding: 16px; line-height: 1.6;
+}
+textarea::placeholder { color: var(--muted); }
+
+.query-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; border-top: 1px solid var(--border2);
+  background: rgba(255,255,255,0.01);
+}
+.example-chips { display: flex; gap: 5px; flex-wrap: wrap; }
+.chip {
+  font-family: var(--mono); font-size: 10px; color: var(--muted2);
+  padding: 3px 8px; border: 1px solid var(--border2); border-radius: 4px;
+  cursor: pointer; transition: all .15s; background: none;
+}
+.chip:hover { color: var(--text); border-color: var(--border); background: rgba(99,179,237,0.05); }
+
+.action-row { display: flex; align-items: center; gap: 8px; }
+
+.btn-explain {
+  font-family: var(--mono); font-size: 11px;
+  padding: 7px 14px; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--border); background: rgba(99,179,237,0.06);
+  color: var(--accent); transition: all .15s;
+}
+.btn-explain:hover { background: rgba(99,179,237,0.12); }
+
+.btn-run {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.5px;
+  padding: 7px 18px; border-radius: 6px; cursor: pointer;
+  border: none; background: var(--accent2);
+  color: #fff; transition: all .15s;
+  display: flex; align-items: center; gap: 6px;
+}
+.btn-run:hover { background: #3182ce; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(66,153,225,0.4); }
+.btn-run:active { transform: none; }
+.btn-run:disabled { opacity: .5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* ── SESSION ── */
+.session-bar {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 20px;
+  font-family: var(--mono); font-size: 10px; color: var(--muted);
+}
+.session-id { color: var(--accent); }
+
+/* ── PIPELINE PROGRESS ── */
+.pipeline-progress {
+  background: var(--card); border: 1px solid var(--border2);
+  border-radius: 10px; padding: 16px; margin-bottom: 20px;
+  display: none;
+}
+.pipeline-progress.show { display: block; }
+.pp-title {
+  font-family: var(--mono); font-size: 10px; color: var(--muted2);
+  letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px;
+}
+.pp-stages { display: flex; flex-direction: column; gap: 6px; }
+.pp-stage {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 10px; border-radius: 6px;
+  background: rgba(255,255,255,0.02); border: 1px solid transparent;
+  transition: all .2s;
+}
+.pp-stage.running { border-color: rgba(99,179,237,0.2); background: rgba(99,179,237,0.04); }
+.pp-stage.done   { border-color: rgba(104,211,145,0.15); background: rgba(104,211,145,0.03); }
+.pp-stage.failed { border-color: rgba(252,129,129,0.2); background: rgba(252,129,129,0.04); }
+.pp-stage.skipped{ opacity: .4; }
+
+.pp-icon { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0; }
+.pp-icon.idle    { background: rgba(255,255,255,0.05); color: var(--muted); }
+.pp-icon.running { background: rgba(99,179,237,0.15); color: var(--accent); }
+.pp-icon.done    { background: rgba(104,211,145,0.15); color: var(--success); }
+.pp-icon.failed  { background: rgba(252,129,129,0.15); color: var(--danger); }
+
+.pp-name  { font-family: var(--mono); font-size: 11px; flex: 1; }
+.pp-state { font-family: var(--mono); font-size: 9px; color: var(--muted); }
+.pp-state.running { color: var(--accent); }
+.pp-state.done    { color: var(--success); }
+.pp-state.failed  { color: var(--danger); }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { display: inline-block; animation: spin .8s linear infinite; }
+
+/* ── RESULTS ── */
+.result-area { display: none; }
+.result-area.show { display: block; }
+
+.result-card {
+  background: var(--card); border: 1px solid var(--border2);
+  border-radius: 12px; overflow: hidden; margin-bottom: 20px;
+}
+.result-card.success { border-color: rgba(104,211,145,0.2); }
+.result-card.error   { border-color: rgba(252,129,129,0.2); }
+
+.result-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px; border-bottom: 1px solid var(--border2);
+  background: rgba(255,255,255,0.01);
+}
+.result-title {
+  font-family: var(--mono); font-size: 11px; color: var(--muted2);
+  display: flex; align-items: center; gap: 7px; letter-spacing: 0.3px;
+}
+.result-title.success-t { color: var(--success); }
+.result-title.error-t   { color: var(--danger); }
+.result-meta { display: flex; gap: 10px; align-items: center; }
+.meta-tag {
+  font-family: var(--mono); font-size: 9px; padding: 2px 7px;
+  border-radius: 3px; background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border2); color: var(--muted2);
+}
+.meta-tag.blue { background: rgba(99,179,237,0.08); color: var(--accent); border-color: rgba(99,179,237,0.2); }
+.meta-tag.green { background: rgba(104,211,145,0.08); color: var(--success); border-color: rgba(104,211,145,0.2); }
+.meta-tag.red   { background: rgba(252,129,129,0.08); color: var(--danger); border-color: rgba(252,129,129,0.2); }
+
+/* SQL block */
+.sql-block { position: relative; }
+.sql-code {
+  padding: 16px 18px;
+  font-family: var(--mono); font-size: 12.5px; line-height: 1.8;
+  overflow-x: auto; color: #e2e8f0;
+}
+.sql-copy {
+  position: absolute; top: 10px; right: 12px;
+  font-family: var(--mono); font-size: 9px; color: var(--muted);
+  background: var(--card); border: 1px solid var(--border2);
+  padding: 3px 8px; border-radius: 3px; cursor: pointer; transition: all .15s;
+}
+.sql-copy:hover { color: var(--text); border-color: var(--border); }
+.kw  { color: #f6ad55; font-weight: 500; }
+.fn  { color: #68d391; }
+.str { color: #fc8181; }
+.col { color: #90cdf4; }
+.num { color: #b794f4; }
+.cmt { color: #4a5568; font-style: italic; }
+
+/* Warnings */
+.warnings-box {
+  padding: 12px 16px; border-top: 1px solid var(--border2);
+  background: rgba(246,173,85,0.04);
+}
+.warn-item {
+  display: flex; align-items: flex-start; gap: 7px;
+  font-family: var(--mono); font-size: 11px; color: var(--warn);
+  margin-bottom: 4px;
+}
+.warn-item:last-child { margin-bottom: 0; }
+
+/* Results table */
+.table-wrap { overflow-x: auto; padding: 0; }
+table { width: 100%; border-collapse: collapse; }
+thead { background: rgba(255,255,255,0.02); }
+th {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.5px;
+  text-transform: uppercase; color: var(--muted2);
+  padding: 10px 14px; text-align: left;
+  border-bottom: 1px solid var(--border2); white-space: nowrap;
+}
+td {
+  font-family: var(--mono); font-size: 12px; color: var(--text);
+  padding: 9px 14px; border-bottom: 1px solid rgba(255,255,255,0.03);
+  max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+tr:hover td { background: rgba(255,255,255,0.02); }
+tr:last-child td { border-bottom: none; }
+.null-val { color: var(--muted); font-style: italic; }
+.num-val  { color: var(--purple); }
+.bool-val-t { color: var(--success); }
+.bool-val-f { color: var(--danger); }
+
+.table-footer {
+  padding: 9px 14px; border-top: 1px solid var(--border2);
+  font-family: var(--mono); font-size: 10px; color: var(--muted);
+  display: flex; align-items: center; justify-content: space-between;
+  background: rgba(255,255,255,0.01);
+}
+
+/* Explain box */
+.explain-box { padding: 16px; font-size: 13.5px; color: var(--muted2); line-height: 1.7; }
+.explain-box strong { color: var(--text); }
+
+/* Error box */
+.error-detail {
+  padding: 16px;
+  font-family: var(--mono); font-size: 12px;
+  color: var(--danger); line-height: 1.7;
+}
+.error-stage {
+  font-size: 10px; color: var(--muted2); margin-bottom: 6px;
+  display: flex; align-items: center; gap: 6px;
+}
+.error-stage span { color: var(--warn); }
+
+/* ── SCHEMA PANEL ── */
+.schema-section { margin-bottom: 32px; }
+.section-title {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--muted2);
+  display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+}
+.section-title::after { content:''; flex:1; height:1px; background: var(--border2); }
+
+.schema-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+.schema-card {
+  background: var(--card); border: 1px solid var(--border2);
+  border-radius: 8px; padding: 12px; cursor: pointer;
+  transition: all .15s;
+}
+.schema-card:hover { border-color: var(--border); background: rgba(99,179,237,0.04); transform: translateY(-1px); }
+.schema-table-name {
+  font-family: var(--mono); font-size: 12px; color: var(--accent);
+  margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
+}
+.schema-col {
+  display: flex; justify-content: space-between;
+  font-family: var(--mono); font-size: 10px; margin-bottom: 3px;
+}
+.schema-col-name { color: var(--text); }
+.schema-col-type { color: var(--muted); }
+.schema-more { font-family: var(--mono); font-size: 9px; color: var(--muted); margin-top: 6px; }
+
+/* ── METRICS ── */
+.metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 32px; }
+.metric-card {
+  background: var(--card); border: 1px solid var(--border2);
+  border-radius: 8px; padding: 16px 14px;
+}
+.metric-val {
+  font-size: 28px; font-weight: 700; letter-spacing: -1px;
+  margin-bottom: 4px; line-height: 1;
+}
+.metric-val.blue   { color: var(--accent); }
+.metric-val.green  { color: var(--success); }
+.metric-val.yellow { color: var(--warn); }
+.metric-val.red    { color: var(--danger); }
+.metric-label { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.5px; text-transform: uppercase; }
+
+/* ── LOGS ── */
+.logs-section { margin-bottom: 40px; }
+.log-entry {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.02);
+  font-family: var(--mono); font-size: 11px;
+}
+.log-time { color: var(--muted); min-width: 80px; flex-shrink: 0; }
+.log-level {
+  font-size: 9px; padding: 1px 6px; border-radius: 3px; flex-shrink: 0;
+  font-weight: 600; letter-spacing: 0.5px;
+}
+.log-level.INFO  { background: rgba(99,179,237,0.1); color: var(--accent); }
+.log-level.WARN  { background: rgba(246,173,85,0.1); color: var(--warn); }
+.log-level.ERROR { background: rgba(252,129,129,0.1); color: var(--danger); }
+.log-msg { color: var(--text); flex: 1; line-height: 1.5; }
+
+/* ── CONFIDENCE BAR ── */
+.confidence-wrap { padding: 12px 16px; border-top: 1px solid var(--border2); }
+.conf-label {
+  display: flex; justify-content: space-between; align-items: center;
+  font-family: var(--mono); font-size: 10px; color: var(--muted2);
+  margin-bottom: 6px;
+}
+.conf-val { color: var(--accent); font-weight: 500; }
+.conf-bar-bg { height: 3px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden; }
+.conf-bar-fill { height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--accent), var(--success)); transition: width .6s ease; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(99,179,237,0.15); border-radius: 3px; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .metrics-grid { grid-template-columns: repeat(2,1fr); }
+  .pipeline-badges { display: none; }
+  .hero-title { font-size: 28px; }
+}
+
+.fade-in { animation: fadeIn .3s ease; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+
+.bottom-bar {
+  border-top: 1px solid var(--border2);
+  padding: 16px 0; margin-top: 40px;
+  font-family: var(--mono); font-size: 10px; color: var(--muted);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.bottom-bar a { color: var(--accent); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap header-inner">
+    <div class="brand">
+      <div class="brand-icon">S</div>
+      <div class="brand-name">santhosh-nl-sql-engine</div>
+      <div class="brand-tag">7-STAGE PIPELINE</div>
+    </div>
+    <div class="header-right">
+      <div class="status-pill">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="statusText">connecting…</span>
+      </div>
+      <a class="nav-link" href="#schema">Schema</a>
+      <a class="nav-link" href="#metrics">Metrics</a>
+      <a class="nav-link" href="#logs">Logs</a>
+      <a class="nav-link" href="http://localhost:8000/docs" target="_blank">API Docs ↗</a>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-eyebrow">Deterministic AI-Powered SQL Engine</div>
+    <h1 class="hero-title">
+      Natural Language<br>
+      <span class="hl">→ Validated SQL</span> <span class="hl2">→ Results</span>
+    </h1>
+    <p class="hero-sub">
+      Every query passes through a 7-stage security pipeline. LLMs generate SQL — backend enforces all safety rules. No exceptions.
+    </p>
+
+    <!-- Pipeline stage badges -->
+    <div class="pipeline-badges" id="pipelineBadges">
+      <div class="stage-badge" data-stage="0"><div class="stage-num">1</div>Ambiguity Check</div>
+      <div class="stage-arrow">→</div>
+      <div class="stage-badge" data-stage="1"><div class="stage-num">2</div>Schema Relevance</div>
+      <div class="stage-arrow">→</div>
+      <div class="stage-badge" data-stage="2"><div class="stage-num">3</div>LLM Classifier</div>
+      <div class="stage-arrow">→</div>
+      <div class="stage-badge" data-stage="3"><div class="stage-num">4</div>SQL Generation</div>
+      <div class="stage-arrow">→</div>
+      <div class="stage-badge" data-stage="4"><div class="stage-num">5</div>Confidence Eval</div>
+      <div class="stage-arrow">→</div>
+      <div class="stage-badge" data-stage="5"><div class="stage-num">6</div>SQL Validation</div>
+      <div class="stage-arrow">→</div>
+      <div class="stage-badge" data-stage="6"><div class="stage-num">7</div>Execution</div>
+    </div>
+  </section>
+
+  <!-- SESSION BAR -->
+  <div class="session-bar">
+    SESSION <span class="session-id" id="sessionDisplay">—</span>
+    <span style="color:var(--border)">·</span>
+    <span id="queryCount">0 queries this session</span>
+    <span style="color:var(--border)">·</span>
+    <button onclick="newSession()" style="background:none;border:none;color:var(--accent);font-family:var(--mono);font-size:10px;cursor:pointer;">new session</button>
+  </div>
+
+  <!-- QUERY BOX -->
+  <section class="query-section">
+    <div class="query-box">
+      <div class="query-header">
+        <div class="query-label">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 5h12M2 8h8M2 11h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          NATURAL LANGUAGE QUERY
+        </div>
+        <div class="char-count"><span id="charCount">0</span>/500</div>
+      </div>
+      <textarea id="queryInput" placeholder="Ask anything about your data in plain English…&#10;&#10;e.g. Show me the top 10 customers by total order value in the last 30 days" maxlength="500" oninput="onInput(this)"></textarea>
+      <div class="query-footer">
+        <div class="example-chips">
+          <button class="chip" onclick="setQuery('Top 5 products by revenue this month')">top products</button>
+          <button class="chip" onclick="setQuery('Daily active users over last 7 days')">DAU trend</button>
+          <button class="chip" onclick="setQuery('Customers who placed more than 3 orders')">repeat buyers</button>
+          <button class="chip" onclick="setQuery('Average order value by country')">AOV by country</button>
+        </div>
+        <div class="action-row">
+          <button class="btn-explain" onclick="runExplain()" id="btnExplain" disabled>Explain SQL</button>
+          <button class="btn-run" onclick="runQuery()" id="btnRun">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M3 2l11 6-11 6V2z"/></svg>
+            Run Query
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PIPELINE PROGRESS -->
+  <div class="pipeline-progress" id="pipelineProgress">
+    <div class="pp-title">Pipeline Execution</div>
+    <div class="pp-stages" id="ppStages"></div>
+  </div>
+
+  <!-- RESULT AREA -->
+  <div class="result-area" id="resultArea"></div>
+
+  <!-- SCHEMA -->
+  <section class="schema-section" id="schema">
+    <div class="section-title">Database Schema</div>
+    <div class="schema-grid" id="schemaGrid">
+      <div style="font-family:var(--mono);font-size:11px;color:var(--muted);grid-column:1/-1;">Loading schema…</div>
+    </div>
+  </section>
+
+  <!-- METRICS -->
+  <section id="metrics">
+    <div class="section-title">Engine Metrics</div>
+    <div class="metrics-grid">
+      <div class="metric-card"><div class="metric-val blue" id="mTotal">—</div><div class="metric-label">Total Queries</div></div>
+      <div class="metric-card"><div class="metric-val green" id="mSuccess">—</div><div class="metric-label">Success Rate</div></div>
+      <div class="metric-card"><div class="metric-val yellow" id="mAvgTime">—</div><div class="metric-label">Avg Latency</div></div>
+      <div class="metric-card"><div class="metric-val red" id="mBlocked">—</div><div class="metric-label">Blocked</div></div>
+    </div>
+  </section>
+
+  <!-- LOGS -->
+  <section class="logs-section" id="logs">
+    <div class="section-title">Recent Logs</div>
+    <div id="logsList" style="background:var(--card);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;">
+      <div style="font-family:var(--mono);font-size:11px;color:var(--muted);text-align:center;padding:20px;">No logs yet</div>
+    </div>
+  </section>
+
+  <div class="bottom-bar">
+    <span>Santhosh NL→SQL Engine · <a href="http://localhost:8000/docs" target="_blank">API Docs</a> · <a href="https://github.com/yourusername/santhosh-nl-sql-engine" target="_blank">GitHub</a></span>
+    <span>FastAPI + Gemini 1.5 Pro + asyncpg · 7-Stage Pipeline</span>
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:8000';
+let sessionId = generateSessionId();
+let sessionQueryCount = 0;
+let lastSQL = '';
+let metricsInterval;
+
+const PIPELINE_STAGES = [
+  { name: 'Ambiguity Check',   key: 'ambiguity' },
+  { name: 'Schema Relevance',  key: 'schema_relevance' },
+  { name: 'LLM Classifier',    key: 'classifier' },
+  { name: 'SQL Generation',    key: 'sql_generation' },
+  { name: 'Confidence Eval',   key: 'confidence' },
+  { name: 'SQL Validation',    key: 'sql_validation' },
+  { name: 'Execution',         key: 'execution' },
+];
+
+function generateSessionId() {
+  return 'sess_' + Math.random().toString(36).slice(2, 10);
+}
+
+function newSession() {
+  sessionId = generateSessionId();
+  sessionQueryCount = 0;
+  document.getElementById('sessionDisplay').textContent = sessionId;
+  document.getElementById('queryCount').textContent = '0 queries this session';
+  document.getElementById('resultArea').classList.remove('show');
+  document.getElementById('pipelineProgress').classList.remove('show');
+  resetPipelineBadges();
+}
+
+function onInput(el) {
+  document.getElementById('charCount').textContent = el.value.length;
+  document.getElementById('btnRun').disabled = !el.value.trim();
+  document.getElementById('btnExplain').disabled = !lastSQL;
+}
+
+function setQuery(q) {
+  const el = document.getElementById('queryInput');
+  el.value = q;
+  onInput(el);
+  el.focus();
+}
+
+// ── STATUS CHECK ──────────────────────────────────────────────────────────
+async function checkHealth() {
+  try {
+    const r = await fetch(`${API}/health`, { signal: AbortSignal.timeout(3000) });
+    const data = await r.json();
+    const dot = document.getElementById('statusDot');
+    const txt = document.getElementById('statusText');
+    if (data.status === 'healthy') {
+      dot.style.background = 'var(--success)';
+      dot.style.boxShadow = '0 0 6px var(--success)';
+      txt.textContent = 'API healthy';
+    } else {
+      dot.style.background = 'var(--warn)';
+      txt.textContent = 'API degraded';
+    }
+  } catch {
+    document.getElementById('statusDot').style.background = 'var(--danger)';
+    document.getElementById('statusText').textContent = 'API offline';
+  }
+}
+
+// ── PIPELINE PROGRESS UI ──────────────────────────────────────────────────
+function buildPipelineUI() {
+  const container = document.getElementById('ppStages');
+  container.innerHTML = PIPELINE_STAGES.map((s, i) => `
+    <div class="pp-stage" id="pp-${s.key}">
+      <div class="pp-icon idle" id="pp-icon-${s.key}">
+        <span style="font-family:var(--mono);color:var(--muted)">${i+1}</span>
+      </div>
+      <div class="pp-name" style="font-family:var(--mono);font-size:11px;color:var(--muted2)">${s.name}</div>
+      <div class="pp-state" id="pp-state-${s.key}">waiting</div>
+    </div>`).join('');
+}
+
+function setPipelineStage(key, state, msg) {
+  const stage = document.getElementById(`pp-${key}`);
+  const icon  = document.getElementById(`pp-icon-${key}`);
+  const stateEl = document.getElementById(`pp-state-${key}`);
+  if (!stage) return;
+
+  stage.className = `pp-stage ${state}`;
+  stateEl.className = `pp-state ${state}`;
+
+  const icons = {
+    idle:    `<span style="font-family:var(--mono);color:var(--muted)">${PIPELINE_STAGES.findIndex(s=>s.key===key)+1}</span>`,
+    running: `<span class="spin" style="color:var(--accent)">↻</span>`,
+    done:    `✓`,
+    failed:  `✗`,
+  };
+  icon.className = `pp-icon ${state}`;
+  icon.innerHTML = icons[state] || icons.idle;
+  stateEl.textContent = msg || state;
+}
+
+function resetPipelineBadges() {
+  document.querySelectorAll('.stage-badge').forEach(el => {
+    el.className = 'stage-badge';
+  });
+}
+
+function activateBadge(index, state) {
+  const badges = document.querySelectorAll('.stage-badge');
+  if (badges[index]) {
+    badges[index].className = `stage-badge ${state}`;
+  }
+}
+
+// ── RUN QUERY ─────────────────────────────────────────────────────────────
+async function runQuery() {
+  const q = document.getElementById('queryInput').value.trim();
+  if (!q) return;
+
+  const btn = document.getElementById('btnRun');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin">↻</span> Running…';
+
+  resetPipelineBadges();
+  buildPipelineUI();
+  document.getElementById('pipelineProgress').classList.add('show');
+  document.getElementById('resultArea').innerHTML = '';
+  document.getElementById('resultArea').classList.remove('show');
+
+  // Animate stages sequentially (frontend preview, actual state from API)
+  const stageAnim = animateStages();
+
+  try {
+    const resp = await fetch(`${API}/query`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: q, session_id: sessionId })
+    });
+    const data = await resp.json();
+
+    clearInterval(stageAnim);
+    renderPipelineResult(data);
+    renderResult(data, q);
+
+    sessionQueryCount++;
+    document.getElementById('queryCount').textContent = `${sessionQueryCount} quer${sessionQueryCount===1?'y':'ies'} this session`;
+
+    if (data.sql) {
+      lastSQL = data.sql;
+      document.getElementById('btnExplain').disabled = false;
+    }
+
+    loadMetrics();
+    addLog('INFO', `Query executed: "${q.slice(0,60)}…"`);
+  } catch (err) {
+    clearInterval(stageAnim);
+    PIPELINE_STAGES.forEach(s => setPipelineStage(s.key, 'idle', 'skipped'));
+    renderErrorCard('Network Error', 'Could not reach the API. Is the backend running?', null);
+    addLog('ERROR', `Network error: ${err.message}`);
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M3 2l11 6-11 6V2z"/></svg> Run Query';
+}
+
+function animateStages() {
+  let i = 0;
+  const iv = setInterval(() => {
+    if (i > 0) {
+      setPipelineStage(PIPELINE_STAGES[i-1].key, 'done', '✓ passed');
+      activateBadge(i-1, 'pass');
+    }
+    if (i < PIPELINE_STAGES.length) {
+      setPipelineStage(PIPELINE_STAGES[i].key, 'running', 'running…');
+      activateBadge(i, 'active');
+      i++;
+    } else {
+      clearInterval(iv);
+    }
+  }, 380);
+  return iv;
+}
+
+function renderPipelineResult(data) {
+  const stages = data.pipeline_stages || {};
+  PIPELINE_STAGES.forEach((s, idx) => {
+    const info = stages[s.key];
+    if (!info) return;
+    if (info.passed === true)  { setPipelineStage(s.key, 'done', '✓ passed'); activateBadge(idx, 'pass'); }
+    else if (info.passed === false) { setPipelineStage(s.key, 'failed', '✗ blocked'); activateBadge(idx, 'fail'); }
+    else { setPipelineStage(s.key, 'done', '✓'); activateBadge(idx, 'pass'); }
+  });
+}
+
+// ── RENDER RESULTS ────────────────────────────────────────────────────────
+function renderResult(data, question) {
+  const area = document.getElementById('resultArea');
+  area.className = 'result-area show fade-in';
+
+  if (data.success === false || data.error) {
+    renderErrorCard(
+      data.failed_stage ? `Pipeline blocked at Stage ${data.failed_stage_number}: ${data.failed_stage}` : 'Query Error',
+      data.error || data.detail || 'Unknown error',
+      data.failed_stage
+    );
+    return;
+  }
+
+  let html = '';
+
+  // SQL Card
+  if (data.sql) {
+    const warnings = data.warnings || [];
+    html += `
+      <div class="result-card success fade-in">
+        <div class="result-header">
+          <div class="result-title success-t">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3 8l4 4 6-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Generated SQL
+          </div>
+          <div class="result-meta">
+            <span class="meta-tag blue">${data.intent || 'SELECT'}</span>
+            ${data.confidence ? `<span class="meta-tag green">${Math.round(data.confidence * 100)}% confidence</span>` : ''}
+            ${data.execution_time_ms ? `<span class="meta-tag">${data.execution_time_ms}ms</span>` : ''}
+          </div>
+        </div>
+        <div class="sql-block">
+          <button class="sql-copy" onclick="copySql(this)">copy</button>
+          <div class="sql-code">${highlightSQL(data.sql)}</div>
+        </div>
+        ${data.confidence ? `
+        <div class="confidence-wrap">
+          <div class="conf-label"><span>Confidence Score</span><span class="conf-val">${Math.round(data.confidence * 100)}%</span></div>
+          <div class="conf-bar-bg"><div class="conf-bar-fill" style="width:${data.confidence * 100}%"></div></div>
+        </div>` : ''}
+        ${warnings.length ? `
+        <div class="warnings-box">
+          ${warnings.map(w => `<div class="warn-item">⚠ ${w}</div>`).join('')}
+        </div>` : ''}
+      </div>`;
+  }
+
+  // Results table
+  if (data.rows !== undefined) {
+    html += renderTable(data.rows, data.columns, data.row_count, data.limit_enforced);
+  }
+
+  area.innerHTML = html;
+  addLog('INFO', `Query returned ${data.row_count ?? 0} rows in ${data.execution_time_ms ?? '?'}ms`);
+}
+
+function renderTable(rows, columns, rowCount, limitEnforced) {
+  if (!rows || rows.length === 0) {
+    return `<div class="result-card" style="padding:20px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--muted);">
+      Query returned 0 rows
+    </div>`;
+  }
+
+  const cols = columns || Object.keys(rows[0]);
+  const rowsHtml = rows.map(row =>
+    `<tr>${cols.map(c => {
+      const v = row[c];
+      if (v === null || v === undefined) return `<td><span class="null-val">NULL</span></td>`;
+      if (typeof v === 'number') return `<td class="num-val">${v}</td>`;
+      if (v === true) return `<td class="bool-val-t">true</td>`;
+      if (v === false) return `<td class="bool-val-f">false</td>`;
+      return `<td title="${String(v)}">${String(v)}</td>`;
+    }).join('')}</tr>`
+  ).join('');
+
+  return `
+    <div class="result-card fade-in">
+      <div class="result-header">
+        <div class="result-title">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M2 6h12" stroke="currentColor" stroke-width="1.2"/></svg>
+          Query Results
+        </div>
+        <div class="result-meta">
+          <span class="meta-tag green">${rows.length} rows</span>
+          ${limitEnforced ? `<span class="meta-tag red">LIMIT enforced</span>` : ''}
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+      </div>
+      <div class="table-footer">
+        <span>${rows.length}${rowCount && rowCount > rows.length ? ` of ${rowCount}` : ''} rows</span>
+        ${limitEnforced ? `<span style="color:var(--warn)">⚡ LIMIT automatically enforced by backend</span>` : ''}
+      </div>
+    </div>`;
+}
+
+function renderErrorCard(title, message, stage) {
+  const area = document.getElementById('resultArea');
+  area.className = 'result-area show fade-in';
+  area.innerHTML = `
+    <div class="result-card error fade-in">
+      <div class="result-header">
+        <div class="result-title error-t">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M8 5v4M8 10.5v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          ${title}
+        </div>
+        ${stage ? `<span class="meta-tag red">Blocked at ${stage}</span>` : ''}
+      </div>
+      <div class="error-detail">
+        ${stage ? `<div class="error-stage">Blocked by safety gate: <span>${stage}</span></div>` : ''}
+        ${message}
+      </div>
+    </div>`;
+}
+
+// ── EXPLAIN ───────────────────────────────────────────────────────────────
+async function runExplain() {
+  if (!lastSQL) return;
+  const btn = document.getElementById('btnExplain');
+  btn.disabled = true;
+  btn.textContent = 'Explaining…';
+
+  try {
+    const resp = await fetch(`${API}/explain`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sql: lastSQL, session_id: sessionId })
+    });
+    const data = await resp.json();
+    const area = document.getElementById('resultArea');
+    const existing = area.innerHTML;
+    area.innerHTML = existing + `
+      <div class="result-card fade-in">
+        <div class="result-header">
+          <div class="result-title">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M8 7v5M8 5.5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            SQL Explanation
+          </div>
+          <span class="meta-tag blue">Gemini 1.5 Pro</span>
+        </div>
+        <div class="explain-box">${data.explanation || 'No explanation available.'}</div>
+      </div>`;
+    addLog('INFO', 'SQL explanation generated');
+  } catch (err) {
+    addLog('ERROR', `Explain error: ${err.message}`);
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Explain SQL';
+}
+
+// ── SCHEMA ────────────────────────────────────────────────────────────────
+async function loadSchema() {
+  try {
+    const resp = await fetch(`${API}/schema`);
+    const data = await resp.json();
+    const grid = document.getElementById('schemaGrid');
+
+    if (!data.tables || data.tables.length === 0) {
+      grid.innerHTML = `<div style="font-family:var(--mono);font-size:11px;color:var(--muted);">No tables found — check DB connection</div>`;
+      return;
+    }
+
+    grid.innerHTML = data.tables.map(t => {
+      const cols = (t.columns || []).slice(0, 4);
+      const more = (t.columns || []).length - 4;
+      return `<div class="schema-card" onclick="setQuery('Show me all columns in ${t.name}')">
+        <div class="schema-table-name">
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><rect x="1" y="1" width="10" height="10" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M1 4h10" stroke="currentColor" stroke-width="1"/></svg>
+          ${t.name}
+        </div>
+        ${cols.map(c => `<div class="schema-col"><span class="schema-col-name">${c.name}</span><span class="schema-col-type">${c.type}</span></div>`).join('')}
+        ${more > 0 ? `<div class="schema-more">+${more} more columns</div>` : ''}
+      </div>`;
+    }).join('');
+  } catch {
+    document.getElementById('schemaGrid').innerHTML = `<div style="font-family:var(--mono);font-size:11px;color:var(--muted);">Schema unavailable — API offline</div>`;
+  }
+}
+
+// ── METRICS ───────────────────────────────────────────────────────────────
+async function loadMetrics() {
+  try {
+    const resp = await fetch(`${API}/admin/metrics`);
+    const data = await resp.json();
+    document.getElementById('mTotal').textContent   = data.total_queries ?? '—';
+    document.getElementById('mSuccess').textContent = data.success_rate ? data.success_rate + '%' : '—';
+    document.getElementById('mAvgTime').textContent = data.avg_latency_ms ? data.avg_latency_ms + 'ms' : '—';
+    document.getElementById('mBlocked').textContent = data.blocked_queries ?? '—';
+  } catch { /* API offline */ }
+}
+
+// ── LOGS ──────────────────────────────────────────────────────────────────
+const clientLogs = [];
+function addLog(level, msg) {
+  const now = new Date();
+  const time = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+  clientLogs.unshift({ level, msg, time });
+  if (clientLogs.length > 20) clientLogs.pop();
+  renderLogs();
+}
+function renderLogs() {
+  document.getElementById('logsList').innerHTML = clientLogs.map(l => `
+    <div class="log-entry">
+      <span class="log-time">${l.time}</span>
+      <span class="log-level ${l.level}">${l.level}</span>
+      <span class="log-msg">${l.msg}</span>
+    </div>`).join('') || `<div style="font-family:var(--mono);font-size:11px;color:var(--muted);text-align:center;padding:20px;">No logs yet</div>`;
+}
+
+async function loadServerLogs() {
+  try {
+    const resp = await fetch(`${API}/admin/logs?limit=10`);
+    const data = await resp.json();
+    (data.logs || []).forEach(l => addLog(l.level || 'INFO', l.message));
+  } catch { /* offline */ }
+}
+
+// ── SQL HIGHLIGHT ─────────────────────────────────────────────────────────
+function highlightSQL(sql) {
+  return sql
+    .replace(/\b(SELECT|FROM|WHERE|JOIN|LEFT|RIGHT|INNER|OUTER|ON|GROUP BY|ORDER BY|HAVING|LIMIT|OFFSET|AS|AND|OR|NOT|IN|IS|NULL|DISTINCT|COUNT|SUM|AVG|MIN|MAX|COALESCE|CASE|WHEN|THEN|ELSE|END|WITH|UNION|ALL)\b/gi, '<span class="kw">$1</span>')
+    .replace(/'([^']*)'/g, '<span class="str">\'$1\'</span>')
+    .replace(/\b(\d+(?:\.\d+)?)\b/g, '<span class="num">$1</span>')
+    .replace(/--[^\n]*/g, '<span class="cmt">$&</span>');
+}
+
+function copySql(btn) {
+  navigator.clipboard.writeText(lastSQL).catch(()=>{});
+  btn.textContent = 'copied!';
+  setTimeout(() => { btn.textContent = 'copy'; }, 1500);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('sessionDisplay').textContent = sessionId;
+  checkHealth();
+  loadSchema();
+  loadMetrics();
+  setInterval(checkHealth, 15000);
+  setInterval(loadMetrics, 30000);
+  addLog('INFO', 'Santhosh NL→SQL Engine frontend loaded');
+});
+</script>
+</body>
+</html>
