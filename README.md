@@ -1,6 +1,6 @@
 # Santhosh NL→SQL Engine
 
-> A deterministic AI-powered SQL query engine. Natural language in — validated, safe SQL out. Every query passes through a 7-stage security pipeline where **the LLM generates but the backend enforces**.
+> A deterministic AI-powered SQL query engine. Natural language in  validated, safe SQL out. Every query passes through a 7-stage security pipeline where **the LLM generates but the backend enforces**.
 
 [![CI](https://github.com/yourusername/santhosh-nl-sql-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/yourusername/santhosh-nl-sql-engine/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
