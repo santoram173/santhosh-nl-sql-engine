@@ -122,7 +122,7 @@ Try these in the UI or via API:
 "Delete all customers"              → Stage 3 (classifier) or Stage 6 (validator)
 "Drop the orders table"             → Stage 6 (SQL validation)
 "Show me everything"                → Stage 1 (ambiguity)
-"What is the weather in Tokyo?"     → Stage 2 (schema relevance)
+"What is the weather in Toronto?"     → Stage 2 (schema relevance)
 ```
 
 ---
